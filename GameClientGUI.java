@@ -12,10 +12,16 @@ public class GameClientGUI extends JFrame {
     private DataOutputStream out;
     private DataInputStream in;
 
-    private JLabel scoreLabel;
-    private JLabel avgTimeLabel;
-    private JLabel bestTimeLabel;
-    private JTextArea leaderboardArea;
+    private CardLayout cardLayout;
+    private JPanel mainContainer;
+
+    private JLabel digiScoreLabel;
+    private JLabel digiAvgTimeLabel;
+    private JLabel digiBestTimeLabel;
+    private JTextArea digiLeaderboardArea;
+
+    private JLabel simonScoreLabel;
+    private JTextArea simonLeaderboardArea;
 
     private final ArrayList<String[]> leaderboard = new ArrayList<>();
 
@@ -34,18 +40,71 @@ public class GameClientGUI extends JFrame {
         setLocationRelativeTo(null);
 
         connectToServer();
-        createGUI();
 
-        if (out != null && in != null) {
-            loadLeaderboard();
-        }
+        cardLayout = new CardLayout();
+        mainContainer = new JPanel(cardLayout);
+
+        mainContainer.add(createMenuPanel(), "MENU");
+        mainContainer.add(createDigiWhackPanel(), "DIGI");
+        mainContainer.add(createSimonPanel(), "SIMON");
+
+        setContentPane(mainContainer);
+
+        cardLayout.show(mainContainer, "MENU");
     }
 
-    private void createGUI() {
+    private JPanel createMenuPanel() {
+        BackgroundPanel root = new BackgroundPanel();
+        root.setLayout(new BorderLayout(20, 20));
+        root.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+
+        JLabel titleLabel = new JLabel("DIGI-WHACK", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial Black", Font.BOLD, 42));
+        titleLabel.setForeground(GOLD);
+
+        JLabel subtitleLabel = new JLabel("Välj vilket spel du vill spela", SwingConstants.CENTER);
+        subtitleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        subtitleLabel.setForeground(new Color(255, 190, 240));
+
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        titlePanel.setOpaque(false);
+        titlePanel.add(titleLabel);
+        titlePanel.add(subtitleLabel);
+
+        CasinoButton digiButton = new CasinoButton("DIGI-WHACK");
+        digiButton.setPreferredSize(new Dimension(280, 75));
+        digiButton.addActionListener(e -> {
+            cardLayout.show(mainContainer, "DIGI");
+            if (out != null && in != null) {
+                loadDigiLeaderboard();
+            }
+        });
+
+        CasinoButton simonButton = new CasinoButton("SIMON SAYS");
+        simonButton.setPreferredSize(new Dimension(280, 75));
+        simonButton.addActionListener(e -> {
+            cardLayout.show(mainContainer, "SIMON");
+        });
+
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 20, 20));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(digiButton);
+        buttonPanel.add(simonButton);
+
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setOpaque(false);
+        centerWrapper.add(buttonPanel);
+
+        root.add(titlePanel, BorderLayout.NORTH);
+        root.add(centerWrapper, BorderLayout.CENTER);
+
+        return root;
+    }
+
+    private JPanel createDigiWhackPanel() {
         BackgroundPanel root = new BackgroundPanel();
         root.setLayout(new BorderLayout(20, 20));
         root.setBorder(BorderFactory.createEmptyBorder(20, 25, 25, 25));
-        setContentPane(root);
 
         JLabel titleLabel = new JLabel("DIGI-WHACK", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial Black", Font.BOLD, 36));
@@ -57,45 +116,43 @@ public class GameClientGUI extends JFrame {
 
         CasinoButton playButton = new CasinoButton("PLAY");
         playButton.setPreferredSize(new Dimension(230, 70));
-        playButton.addActionListener(e -> playGame());
+        playButton.addActionListener(e -> playDigiWhack());
+
+        JButton backButton = createBackButton();
+        backButton.addActionListener(e -> cardLayout.show(mainContainer, "MENU"));
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(backButton);
+        buttonPanel.add(playButton);
 
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
         topPanel.add(titleLabel, BorderLayout.NORTH);
         topPanel.add(subtitleLabel, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(playButton);
-
         topPanel.add(buttonPanel, BorderLayout.SOUTH);
+
         root.add(topPanel, BorderLayout.NORTH);
 
         NeonPanel resultPanel = new NeonPanel("LATEST RESULT");
         resultPanel.setLayout(new GridLayout(4, 1, 10, 10));
 
         JLabel resultTitle = createBigLabel("YOUR ROUND");
-        scoreLabel = createStatLabel("SCORE: -");
-        avgTimeLabel = createStatLabel("AVG TIME: -");
-        bestTimeLabel = createStatLabel("BEST TIME: -");
+        digiScoreLabel = createStatLabel("SCORE: -");
+        digiAvgTimeLabel = createStatLabel("AVG TIME: -");
+        digiBestTimeLabel = createStatLabel("BEST TIME: -");
 
         resultPanel.add(resultTitle);
-        resultPanel.add(scoreLabel);
-        resultPanel.add(avgTimeLabel);
-        resultPanel.add(bestTimeLabel);
+        resultPanel.add(digiScoreLabel);
+        resultPanel.add(digiAvgTimeLabel);
+        resultPanel.add(digiBestTimeLabel);
 
         NeonPanel leaderboardPanel = new NeonPanel("LEADERBOARD");
         leaderboardPanel.setLayout(new BorderLayout());
 
-        leaderboardArea = new JTextArea();
-        leaderboardArea.setEditable(false);
-        leaderboardArea.setOpaque(false);
-        leaderboardArea.setForeground(LIGHT_TEXT);
-        leaderboardArea.setFont(new Font("Monospaced", Font.BOLD, 15));
-        leaderboardArea.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        leaderboardArea.setText("Leaderboard loading...");
-
-        leaderboardPanel.add(leaderboardArea, BorderLayout.CENTER);
+        digiLeaderboardArea = createLeaderboardArea();
+        digiLeaderboardArea.setText("Leaderboard loading...");
+        leaderboardPanel.add(digiLeaderboardArea, BorderLayout.CENTER);
 
         JPanel centerPanel = new JPanel(new GridLayout(1, 2, 25, 25));
         centerPanel.setOpaque(false);
@@ -103,6 +160,88 @@ public class GameClientGUI extends JFrame {
         centerPanel.add(leaderboardPanel);
 
         root.add(centerPanel, BorderLayout.CENTER);
+
+        return root;
+    }
+
+    private JPanel createSimonPanel() {
+        BackgroundPanel root = new BackgroundPanel();
+        root.setLayout(new BorderLayout(20, 20));
+        root.setBorder(BorderFactory.createEmptyBorder(20, 25, 25, 25));
+
+        JLabel titleLabel = new JLabel("SIMON SAYS", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial Black", Font.BOLD, 36));
+        titleLabel.setForeground(GOLD);
+
+        JLabel subtitleLabel = new JLabel("Kom ihåg sekvensen och försök slå ditt rekord", SwingConstants.CENTER);
+        subtitleLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        subtitleLabel.setForeground(new Color(255, 190, 240));
+
+        CasinoButton playButton = new CasinoButton("PLAY");
+        playButton.setPreferredSize(new Dimension(230, 70));
+        playButton.addActionListener(e -> playSimonSays());
+
+        JButton backButton = createBackButton();
+        backButton.addActionListener(e -> cardLayout.show(mainContainer, "MENU"));
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(backButton);
+        buttonPanel.add(playButton);
+
+        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+        topPanel.setOpaque(false);
+        topPanel.add(titleLabel, BorderLayout.NORTH);
+        topPanel.add(subtitleLabel, BorderLayout.CENTER);
+        topPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        root.add(topPanel, BorderLayout.NORTH);
+
+        NeonPanel resultPanel = new NeonPanel("LATEST RESULT");
+        resultPanel.setLayout(new GridLayout(3, 1, 10, 10));
+
+        JLabel resultTitle = createBigLabel("YOUR ROUND");
+        simonScoreLabel = createStatLabel("SCORE: -");
+
+        resultPanel.add(resultTitle);
+        resultPanel.add(simonScoreLabel);
+
+        NeonPanel leaderboardPanel = new NeonPanel("LEADERBOARD");
+        leaderboardPanel.setLayout(new BorderLayout());
+
+        simonLeaderboardArea = createLeaderboardArea();
+
+        leaderboardPanel.add(simonLeaderboardArea, BorderLayout.CENTER);
+
+        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 25, 25));
+        centerPanel.setOpaque(false);
+        centerPanel.add(resultPanel);
+        centerPanel.add(leaderboardPanel);
+
+        root.add(centerPanel, BorderLayout.CENTER);
+
+        return root;
+    }
+
+    private JButton createBackButton() {
+        JButton button = new JButton("← BACK");
+        button.setFont(new Font("Arial Black", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(new Color(80, 40, 120));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createLineBorder(GOLD, 2));
+        button.setPreferredSize(new Dimension(120, 45));
+        return button;
+    }
+
+    private JTextArea createLeaderboardArea() {
+        JTextArea area = new JTextArea();
+        area.setEditable(false);
+        area.setOpaque(false);
+        area.setForeground(LIGHT_TEXT);
+        area.setFont(new Font("Monospaced", Font.BOLD, 15));
+        area.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        return area;
     }
 
     private JLabel createBigLabel(String text) {
@@ -129,7 +268,7 @@ public class GameClientGUI extends JFrame {
         }
     }
 
-    private void playGame() {
+    private void playDigiWhack() {
         if (out == null || in == null) {
             JOptionPane.showMessageDialog(this, "Ingen anslutning till servern.");
             return;
@@ -143,19 +282,19 @@ public class GameClientGUI extends JFrame {
             int score = in.readInt();
             int bestTime = in.readInt();
 
-            updateResult(score, averageTime, bestTime);
+            updateDigiResult(score, averageTime, bestTime);
 
-            loadLeaderboard();
+            loadDigiLeaderboard();
 
-            if (qualifiesForLeaderboard(score, averageTime)) {
+            if (qualifiesForDigiLeaderboard(score, averageTime)) {
                 String name = JOptionPane.showInputDialog(
                         this,
                         "Jackpot! Du kvalade in på leaderboarden.\nSkriv ditt namn:"
                 );
 
                 if (name != null && !name.trim().isEmpty()) {
-                    sendHighscore(name.trim(), score, averageTime);
-                    loadLeaderboard();
+                    sendDigiHighscore(name.trim(), score, averageTime);
+                    loadDigiLeaderboard();
                 }
             }
 
@@ -164,13 +303,36 @@ public class GameClientGUI extends JFrame {
         }
     }
 
-    private void updateResult(int score, int averageTime, int bestTime) {
-        scoreLabel.setText("SCORE: " + score);
-        avgTimeLabel.setText("AVG TIME: " + averageTime + " ms");
-        bestTimeLabel.setText("BEST TIME: " + bestTime + " ms");
+    private void playSimonSays() {
+        if (out == null || in == null) {
+            JOptionPane.showMessageDialog(this, "Ingen anslutning till servern.");
+            return;
+        }
+
+        try {
+            out.writeInt(4);
+            out.flush();
+
+            int score = in.readInt();
+
+            updateSimonResult(score);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void loadLeaderboard() {
+    private void updateDigiResult(int score, int averageTime, int bestTime) {
+        digiScoreLabel.setText("SCORE: " + score);
+        digiAvgTimeLabel.setText("AVG TIME: " + averageTime + " ms");
+        digiBestTimeLabel.setText("BEST TIME: " + bestTime + " ms");
+    }
+
+    private void updateSimonResult(int score) {
+        simonScoreLabel.setText("SCORE: " + score);
+    }
+
+    private void loadDigiLeaderboard() {
         try {
             out.writeInt(2);
             out.flush();
@@ -190,14 +352,14 @@ public class GameClientGUI extends JFrame {
                 });
             }
 
-            updateLeaderboardArea();
+            updateDigiLeaderboardArea();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void updateLeaderboardArea() {
+    private void updateDigiLeaderboardArea() {
         StringBuilder text = new StringBuilder();
 
         text.append(" RANK   PLAYER       SCORE   AVG\n");
@@ -219,10 +381,10 @@ public class GameClientGUI extends JFrame {
             text.append("\n No high scores yet.");
         }
 
-        leaderboardArea.setText(text.toString());
+        digiLeaderboardArea.setText(text.toString());
     }
 
-    private boolean qualifiesForLeaderboard(int score, int averageTime) {
+    private boolean qualifiesForDigiLeaderboard(int score, int averageTime) {
         if (leaderboard.size() < 10) {
             return true;
         }
@@ -239,7 +401,7 @@ public class GameClientGUI extends JFrame {
         return score == lowestTopScore && averageTime < slowestTopAverage;
     }
 
-    private void sendHighscore(String name, int score, int averageTime) {
+    private void sendDigiHighscore(String name, int score, int averageTime) {
         try {
             out.writeInt(3);
             out.writeUTF(name);
