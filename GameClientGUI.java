@@ -24,6 +24,7 @@ public class GameClientGUI extends JFrame {
     private JTextArea simonLeaderboardArea;
 
     private final ArrayList<String[]> leaderboard = new ArrayList<>();
+    private final ArrayList<String[]> simonLeaderboard = new ArrayList<>();
 
     private final Color DARK_PURPLE = new Color(28, 5, 45);
     private final Color DEEP_BLUE = new Color(8, 8, 45);
@@ -84,6 +85,9 @@ public class GameClientGUI extends JFrame {
         simonButton.setPreferredSize(new Dimension(280, 75));
         simonButton.addActionListener(e -> {
             cardLayout.show(mainContainer, "SIMON");
+            if (out != null && in != null) {
+                loadSimonLeaderboard();
+            }
         });
 
         JPanel buttonPanel = new JPanel(new GridLayout(2, 1, 20, 20));
@@ -317,6 +321,20 @@ public class GameClientGUI extends JFrame {
 
             updateSimonResult(score);
 
+            loadSimonLeaderboard();
+
+            if (qualifiesForSimonLeaderboard(score)) {
+                String name = JOptionPane.showInputDialog(
+                        this,
+                        "Du kvalade in på Simon Says leaderboarden!\nSkriv ditt namn:"
+                );
+
+                if (name != null && !name.trim().isEmpty()) {
+                    sendSimonHighscore(name.trim(), score);
+                    loadSimonLeaderboard();
+                }
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -330,6 +348,32 @@ public class GameClientGUI extends JFrame {
 
     private void updateSimonResult(int score) {
         simonScoreLabel.setText("SCORE: " + score);
+    }
+
+    private void loadSimonLeaderboard() {
+        try {
+            out.writeInt(5);
+            out.flush();
+
+            int numberOfEntries = in.readInt();
+
+            simonLeaderboard.clear();
+
+            for (int i = 0; i < numberOfEntries; i++) {
+                String name = in.readUTF();
+                int score = in.readInt();
+
+                simonLeaderboard.add(new String[]{
+                        name,
+                        String.valueOf(score)
+                });
+            }
+
+            updateSimonLeaderboardArea();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadDigiLeaderboard() {
@@ -384,6 +428,30 @@ public class GameClientGUI extends JFrame {
         digiLeaderboardArea.setText(text.toString());
     }
 
+    private void updateSimonLeaderboardArea() {
+        StringBuilder text = new StringBuilder();
+
+        text.append(" RANK   PLAYER       SCORE\n");
+        text.append("============================\n");
+
+        for (int i = 0; i < simonLeaderboard.size(); i++) {
+            String[] entry = simonLeaderboard.get(i);
+
+            text.append(String.format(
+                    " #%02d   %-10s   %5s\n",
+                    i + 1,
+                    entry[0],
+                    entry[1]
+            ));
+        }
+
+        if (simonLeaderboard.isEmpty()) {
+            text.append("\n No high scores yet.");
+        }
+
+        simonLeaderboardArea.setText(text.toString());
+    }
+
     private boolean qualifiesForDigiLeaderboard(int score, int averageTime) {
         if (leaderboard.size() < 10) {
             return true;
@@ -401,6 +469,17 @@ public class GameClientGUI extends JFrame {
         return score == lowestTopScore && averageTime < slowestTopAverage;
     }
 
+    private boolean qualifiesForSimonLeaderboard(int score) {
+        if (simonLeaderboard.size() < 10) {
+            return true;
+        }
+
+        String[] lastEntry = simonLeaderboard.get(simonLeaderboard.size() - 1);
+        int lowestTopScore = Integer.parseInt(lastEntry[1]);
+
+        return score > lowestTopScore;
+    }
+
     private void sendDigiHighscore(String name, int score, int averageTime) {
         try {
             out.writeInt(3);
@@ -408,6 +487,18 @@ public class GameClientGUI extends JFrame {
             out.writeInt(score);
             out.writeInt(averageTime);
             out.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendSimonHighscore(String name, int score) {
+        try {
+            out.writeInt(6);
+            out.writeUTF(name);
+            out.writeInt(score);
+            out.flush();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
