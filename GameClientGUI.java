@@ -282,6 +282,14 @@ public class GameClientGUI extends JFrame {
             out.writeInt(1);
             out.flush();
 
+            int status = in.readInt();
+
+            if (status == 0) {
+                String errorMessage = in.readUTF();
+                JOptionPane.showMessageDialog(this, errorMessage);
+                return;
+            }
+
             int averageTime = in.readInt();
             int score = in.readInt();
             int bestTime = in.readInt();
@@ -316,6 +324,14 @@ public class GameClientGUI extends JFrame {
         try {
             out.writeInt(4);
             out.flush();
+
+            int status = in.readInt();
+
+            if (status == 0) {
+                String errorMessage = in.readUTF();
+                JOptionPane.showMessageDialog(this, errorMessage);
+                return;
+            }
 
             int score = in.readInt();
 
