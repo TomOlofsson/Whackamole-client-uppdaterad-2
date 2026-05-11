@@ -67,9 +67,33 @@ public class GameClientGUI extends JFrame {
         subtitleLabel.setFont(new Font("Arial", Font.BOLD, 18));
         subtitleLabel.setForeground(new Color(255, 190, 240));
 
-        JPanel titlePanel = new JPanel(new GridLayout(2, 1, 5, 5));
+        ImageIcon originalIcon = new ImageIcon(getClass().getResource("/digiwhackloga.png"));
+
+        Image scaledImage = originalIcon.getImage().getScaledInstance(
+                600,
+                -1,
+                Image.SCALE_SMOOTH
+        );
+
+        ImageIcon scaledIcon = new ImageIcon(scaledImage);
+
+        JLabel logoLabel = new JLabel(scaledIcon);
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
+
+        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        titlePanel.add(logoLabel);
+        titlePanel.add(Box.createVerticalStrut(100));
+
         titlePanel.add(titleLabel);
+        titlePanel.add(Box.createVerticalStrut(5));
+
         titlePanel.add(subtitleLabel);
 
         CasinoButton digiButton = new CasinoButton("DIGI-WHACK");
