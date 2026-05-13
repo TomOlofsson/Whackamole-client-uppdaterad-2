@@ -1,3 +1,13 @@
+/**
+ * Grafiskt användargränssnitt för klienten i Digi-Whack-projektet.
+ * Klassen hanterar navigation mellan startsida, Digi-Whack och Simon Says,
+ * samt kommunikation med servern via socket.
+ *
+ * Klienten kan starta spel, visa resultat, hämta leaderboard och skicka highscores.
+ *
+ * @author Tom Olofsson
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
@@ -34,6 +44,12 @@ public class GameClientGUI extends JFrame {
     private final Color LIGHT_TEXT = new Color(255, 245, 255);
     private final Color CARD_BG = new Color(22, 10, 55);
 
+    /**
+     * Skapar klientfönstret, ansluter till servern och initierar alla GUI-paneler.
+     * CardLayout används för att kunna växla mellan meny, Digi-Whack och Simon Says.
+     *
+     * @author Tom Olofsson
+     */
     public GameClientGUI() {
         setTitle("Digi-Whack");
         setSize(950, 560);
@@ -54,6 +70,13 @@ public class GameClientGUI extends JFrame {
         cardLayout.show(mainContainer, "MENU");
     }
 
+    /**
+     * Skapar startsidan där användaren kan välja mellan Digi-Whack och Simon Says.
+     *
+     * @return panelen som representerar startsidan
+     *
+     * @author Tom Olofsson
+     */
     private JPanel createMenuPanel() {
         BackgroundPanel root = new BackgroundPanel();
         root.setLayout(new BorderLayout(20, 20));
@@ -96,7 +119,7 @@ public class GameClientGUI extends JFrame {
 
         titlePanel.add(subtitleLabel);
 
-        CasinoButton digiButton = new CasinoButton("DIGI-WHACK");
+        GameButton digiButton = new GameButton("DIGI-WHACK");
         digiButton.setPreferredSize(new Dimension(280, 75));
         digiButton.addActionListener(e -> {
             cardLayout.show(mainContainer, "DIGI");
@@ -105,7 +128,7 @@ public class GameClientGUI extends JFrame {
             }
         });
 
-        CasinoButton simonButton = new CasinoButton("SIMON SAYS");
+        GameButton simonButton = new GameButton("SIMON SAYS");
         simonButton.setPreferredSize(new Dimension(280, 75));
         simonButton.addActionListener(e -> {
             cardLayout.show(mainContainer, "SIMON");
@@ -129,6 +152,14 @@ public class GameClientGUI extends JFrame {
         return root;
     }
 
+    /**
+     * Skapar GUI-panelen för Digi-Whack.
+     * Panelen innehåller play-knapp, back-knapp, resultatfält och leaderboard.
+     *
+     * @return panelen för Digi-Whack
+     *
+     * @author Tom Olofsson
+     */
     private JPanel createDigiWhackPanel() {
         BackgroundPanel root = new BackgroundPanel();
         root.setLayout(new BorderLayout(20, 20));
@@ -142,7 +173,7 @@ public class GameClientGUI extends JFrame {
         subtitleLabel.setFont(new Font("Arial", Font.BOLD, 14));
         subtitleLabel.setForeground(new Color(255, 190, 240));
 
-        CasinoButton playButton = new CasinoButton("PLAY");
+        GameButton playButton = new GameButton("PLAY");
         playButton.setPreferredSize(new Dimension(230, 70));
         playButton.addActionListener(e -> playDigiWhack());
 
@@ -192,6 +223,14 @@ public class GameClientGUI extends JFrame {
         return root;
     }
 
+    /**
+     * Skapar GUI-panelen för Simon Says.
+     * Panelen innehåller play-knapp, back-knapp, resultatfält och leaderboard.
+     *
+     * @return panelen för Simon Says
+     *
+     * @author Tom Olofsson
+     */
     private JPanel createSimonPanel() {
         BackgroundPanel root = new BackgroundPanel();
         root.setLayout(new BorderLayout(20, 20));
@@ -205,7 +244,7 @@ public class GameClientGUI extends JFrame {
         subtitleLabel.setFont(new Font("Arial", Font.BOLD, 14));
         subtitleLabel.setForeground(new Color(255, 190, 240));
 
-        CasinoButton playButton = new CasinoButton("PLAY");
+        GameButton playButton = new GameButton("PLAY");
         playButton.setPreferredSize(new Dimension(230, 70));
         playButton.addActionListener(e -> playSimonSays());
 
@@ -251,6 +290,13 @@ public class GameClientGUI extends JFrame {
         return root;
     }
 
+    /**
+     * Skapar en tillbaka-knapp som används för att gå tillbaka till startsidan.
+     *
+     * @return en stylad JButton för navigation tillbaka till menyn
+     *
+     * @author Tom Olofsson
+     */
     private JButton createBackButton() {
         JButton button = new JButton("← BACK");
         button.setFont(new Font("Arial Black", Font.BOLD, 14));
@@ -262,6 +308,13 @@ public class GameClientGUI extends JFrame {
         return button;
     }
 
+    /**
+     * Skapar ett textfält som används för att visa leaderboard-information.
+     *
+     * @return en JTextArea anpassad för leaderboard-visning
+     *
+     * @author Tom Olofsson
+     */
     private JTextArea createLeaderboardArea() {
         JTextArea area = new JTextArea();
         area.setEditable(false);
@@ -272,6 +325,14 @@ public class GameClientGUI extends JFrame {
         return area;
     }
 
+    /**
+     * Skapar en större rubriklabel som används i resultatpanelerna.
+     *
+     * @param text texten som ska visas
+     * @return en formaterad JLabel
+     *
+     * @author Tom Olofsson
+     */
     private JLabel createBigLabel(String text) {
         JLabel label = new JLabel(text, SwingConstants.CENTER);
         label.setForeground(GOLD);
@@ -279,6 +340,14 @@ public class GameClientGUI extends JFrame {
         return label;
     }
 
+    /**
+     * Skapar en label för resultatdata, exempelvis score eller reaktionstid.
+     *
+     * @param text texten som ska visas
+     * @return en formaterad JLabel
+     *
+     * @author Tom Olofsson
+     */
     private JLabel createStatLabel(String text) {
         JLabel label = new JLabel(text, SwingConstants.CENTER);
         label.setForeground(LIGHT_TEXT);
@@ -286,6 +355,12 @@ public class GameClientGUI extends JFrame {
         return label;
     }
 
+    /**
+     * Försöker ansluta klienten till servern via socket på localhost och port 5000.
+     * Om anslutningen lyckas skapas input- och outputströmmar för kommunikationen.
+     *
+     * @author Tom Olofsson
+     */
     private void connectToServer() {
         try {
             socket = new Socket("localhost", 5000);
@@ -296,6 +371,13 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Startar en Digi-Whack-runda genom att skicka kommando 1 till servern.
+     * Läser sedan statuskod och resultat från servern.
+     * Om spelaren kvalar in på leaderboarden visas en popup där namn kan anges.
+     *
+     * @author Tom Olofsson
+     */
     private void playDigiWhack() {
         if (out == null || in == null) {
             JOptionPane.showMessageDialog(this, "Ingen anslutning till servern.");
@@ -339,6 +421,13 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Startar en Simon Says-runda genom att skicka kommando 4 till servern.
+     * Läser sedan statuskod och score från servern.
+     * Om spelaren kvalar in på Simon Says leaderboard visas en popup där namn kan anges.
+     *
+     * @author Tom Olofsson
+     */
     private void playSimonSays() {
         if (out == null || in == null) {
             JOptionPane.showMessageDialog(this, "Ingen anslutning till servern.");
@@ -380,16 +469,39 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Uppdaterar resultatfältet för Digi-Whack i GUI:t.
+     *
+     * @param score spelarens poäng
+     * @param averageTime spelarens genomsnittliga reaktionstid
+     * @param bestTime spelarens bästa reaktionstid
+     *
+     * @author Tom Olofsson
+     */
     private void updateDigiResult(int score, int averageTime, int bestTime) {
         digiScoreLabel.setText("SCORE: " + score);
         digiAvgTimeLabel.setText("AVG TIME: " + averageTime + " ms");
         digiBestTimeLabel.setText("BEST TIME: " + bestTime + " ms");
     }
 
+    /**
+     * Uppdaterar resultatfältet för Simon Says i GUI:t.
+     *
+     * @param score spelarens poäng
+     *
+     * @author Tom Olofsson
+     */
     private void updateSimonResult(int score) {
         simonScoreLabel.setText("SCORE: " + score);
     }
 
+    /**
+     * Hämtar Simon Says leaderboard från servern.
+     * Klienten skickar kommando 5 och läser sedan antal poster,
+     * namn och score för varje leaderboard-entry.
+     *
+     * @author Tom Olofsson
+     */
     private void loadSimonLeaderboard() {
         try {
             out.writeInt(5);
@@ -416,6 +528,13 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Hämtar Digi-Whack leaderboard från servern.
+     * Klienten skickar kommando 2 och läser sedan antal poster,
+     * namn, score och average time för varje leaderboard-entry.
+     *
+     * @author Tom Olofsson
+     */
     private void loadDigiLeaderboard() {
         try {
             out.writeInt(2);
@@ -443,6 +562,11 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Uppdaterar textfältet som visar Digi-Whack leaderboard.
+     *
+     * @author Tom Olofsson
+     */
     private void updateDigiLeaderboardArea() {
         StringBuilder text = new StringBuilder();
 
@@ -468,6 +592,11 @@ public class GameClientGUI extends JFrame {
         digiLeaderboardArea.setText(text.toString());
     }
 
+    /**
+     * Uppdaterar textfältet som visar Simon Says leaderboard.
+     *
+     * @author Tom Olofsson
+     */
     private void updateSimonLeaderboardArea() {
         StringBuilder text = new StringBuilder();
 
@@ -492,6 +621,16 @@ public class GameClientGUI extends JFrame {
         simonLeaderboardArea.setText(text.toString());
     }
 
+    /**
+     * Kontrollerar om ett Digi-Whack-resultat kvalar in på leaderboarden.
+     * Resultat jämförs först efter score och vid lika score efter lägst average time.
+     *
+     * @param score spelarens poäng
+     * @param averageTime spelarens genomsnittliga reaktionstid
+     * @return true om resultatet kvalar in, annars false
+     *
+     * @author Tom Olofsson
+     */
     private boolean qualifiesForDigiLeaderboard(int score, int averageTime) {
         if (leaderboard.size() < 10) {
             return true;
@@ -509,6 +648,15 @@ public class GameClientGUI extends JFrame {
         return score == lowestTopScore && averageTime < slowestTopAverage;
     }
 
+    /**
+     * Kontrollerar om ett Simon Says-resultat kvalar in på leaderboarden.
+     * Resultat jämförs endast efter score.
+     *
+     * @param score spelarens poäng
+     * @return true om resultatet kvalar in, annars false
+     *
+     * @author Tom Olofsson
+     */
     private boolean qualifiesForSimonLeaderboard(int score) {
         if (simonLeaderboard.size() < 10) {
             return true;
@@ -520,6 +668,15 @@ public class GameClientGUI extends JFrame {
         return score > lowestTopScore;
     }
 
+    /**
+     * Skickar ett nytt Digi-Whack highscore till servern.
+     *
+     * @param name spelarens namn
+     * @param score spelarens poäng
+     * @param averageTime spelarens genomsnittliga reaktionstid
+     *
+     * @author Tom Olofsson
+     */
     private void sendDigiHighscore(String name, int score, int averageTime) {
         try {
             out.writeInt(3);
@@ -532,6 +689,14 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Skickar ett nytt Simon Says highscore till servern.
+     *
+     * @param name spelarens namn
+     * @param score spelarens poäng
+     *
+     * @author Tom Olofsson
+     */
     private void sendSimonHighscore(String name, int score) {
         try {
             out.writeInt(6);
@@ -544,7 +709,17 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Anpassad bakgrundspanel som ritar en gradientbakgrund och ljuseffekter.
+     *
+     * @author Tom Olofsson
+     */
     private class BackgroundPanel extends JPanel {
+        /**
+         * Ritar bakgrunden för panelen med gradient och dekorativa cirklar.
+         *
+         * @param g grafikobjektet som används för att rita komponenten
+         */
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -566,15 +741,31 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Anpassad panel med neonliknande ram och rundade hörn.
+     * Används för resultat- och leaderboard-paneler.
+     *
+     * @author Tom Olofsson
+     */
     private class NeonPanel extends JPanel {
         private final String title;
 
+        /**
+         * Skapar en neonpanel med angiven titel.
+         *
+         * @param title titeln som visas högst upp på panelen
+         */
         public NeonPanel(String title) {
             this.title = title;
             setOpaque(false);
             setBorder(BorderFactory.createEmptyBorder(45, 20, 20, 20));
         }
 
+        /**
+         * Ritar neonpanelens bakgrund, ram och titel.
+         *
+         * @param g grafikobjektet som används för att rita komponenten
+         */
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -606,8 +797,19 @@ public class GameClientGUI extends JFrame {
         }
     }
 
-    private class CasinoButton extends JButton {
-        public CasinoButton(String text) {
+    /**
+     * Anpassad knapp.
+     * Knappen ritas med gradient, rundade hörn och highlight-effekt.
+     *
+     * @author Tom Olofsson
+     */
+    private class GameButton extends JButton {
+        /**
+         * Skapar en knapp med angiven text.
+         *
+         * @param text texten som visas på knappen
+         */
+        public GameButton(String text) {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
@@ -617,6 +819,11 @@ public class GameClientGUI extends JFrame {
             setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
 
+        /**
+         * Ritar knappens utseende med gradient, ram och glanseffekt.
+         *
+         * @param g grafikobjektet som används för att rita komponenten
+         */
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -643,6 +850,11 @@ public class GameClientGUI extends JFrame {
         }
     }
 
+    /**
+     * Startar klientprogrammet.
+     *
+     * @author Tom Olofsson
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             GameClientGUI gui = new GameClientGUI();
