@@ -6,6 +6,7 @@
  * Klienten kan starta spel, visa resultat, hämta leaderboard och skicka highscores.
  *
  * @author Tom Olofsson
+ * @author Saif Atia
  */
 
 import javax.swing.*;
@@ -29,6 +30,9 @@ public class GameClientGUI extends JFrame {
     private JLabel digiAvgTimeLabel;
     private JLabel digiBestTimeLabel;
     private JTextArea digiLeaderboardArea;
+
+    private boolean hardcoreMode = false;
+    private JButton hardcoreButton;
 
     private JLabel simonScoreLabel;
     private JTextArea simonLeaderboardArea;
@@ -159,6 +163,7 @@ public class GameClientGUI extends JFrame {
      * @return panelen för Digi-Whack
      *
      * @author Tom Olofsson
+     * @author Saif Atia - lagt till hardcore mode toggle
      */
     private JPanel createDigiWhackPanel() {
         BackgroundPanel root = new BackgroundPanel();
@@ -177,6 +182,19 @@ public class GameClientGUI extends JFrame {
         playButton.setPreferredSize(new Dimension(230, 70));
         playButton.addActionListener(e -> playDigiWhack());
 
+        hardcoreButton = new JButton("HARDCORE: OFF");
+        hardcoreButton.setFont(new Font("Arial Black", Font.BOLD, 14));
+        hardcoreButton.setForeground(Color.WHITE);
+        hardcoreButton.setFocusPainted(false);
+        hardcoreButton.setBorder(BorderFactory.createLineBorder(GOLD, 2));
+        hardcoreButton.setPreferredSize(new Dimension(170, 45));
+        hardcoreButton.setOpaque(true);
+        hardcoreButton.setContentAreaFilled(true);
+
+        updateHardcoreButton();
+
+        hardcoreButton.addActionListener(e -> toggleHardcoreMode());
+
         JButton backButton = createBackButton();
         backButton.addActionListener(e -> cardLayout.show(mainContainer, "MENU"));
 
@@ -184,6 +202,7 @@ public class GameClientGUI extends JFrame {
         buttonPanel.setOpaque(false);
         buttonPanel.add(backButton);
         buttonPanel.add(playButton);
+        buttonPanel.add(hardcoreButton);
 
         JPanel topPanel = new JPanel(new BorderLayout(10, 10));
         topPanel.setOpaque(false);
@@ -379,6 +398,7 @@ public class GameClientGUI extends JFrame {
      * @author Tom Olofsson
      */
     private void playDigiWhack() {
+
         if (out == null || in == null) {
             JOptionPane.showMessageDialog(this, "Ingen anslutning till servern.");
             return;
@@ -386,6 +406,7 @@ public class GameClientGUI extends JFrame {
 
         try {
             out.writeInt(1);
+            out.writeBoolean(hardcoreMode);
             out.flush();
 
             int status = in.readInt();
@@ -419,6 +440,43 @@ public class GameClientGUI extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Metod som togglar hardcore mode i DigiWhack
+     * Växlar läget mellan på eller av i klienten.
+     * Uppdaterar även knappens text och färg beroende på valt läge.
+     *
+     * @author Saif Atia
+     */
+
+    private void toggleHardcoreMode() {
+        hardcoreMode = !hardcoreMode;
+
+        if (hardcoreMode) {
+            hardcoreButton.setText("HARDCORE: ON");
+            hardcoreButton.setBackground(new Color(150, 0, 0));
+        } else {
+            hardcoreButton.setText("HARDCORE: OFF");
+            hardcoreButton.setBackground(new Color(80, 40, 120));
+        }
+    }
+
+    /**
+     * Uppdaterar hardcore-knappens text och färg beroende på valt läge.
+     *
+     * @author Saif Atia
+     */
+    private void updateHardcoreButton() {
+        if (hardcoreMode) {
+            hardcoreButton.setText("HARDCORE: ON");
+            hardcoreButton.setBackground(new Color(150, 0, 0)); // läskig röd
+        } else {
+            hardcoreButton.setText("HARDCORE: OFF");
+            hardcoreButton.setBackground(new Color(80, 40, 120)); // som back-knappen
+        }
+
+        hardcoreButton.repaint();
     }
 
     /**
